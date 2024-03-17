@@ -1,9 +1,8 @@
 :: Startup Stuff
 @echo off
-for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /C:"IPv4"') do (
-    set "local_ip=%%a"
-    set "local_ip=!local_ip: =!"
-)
+for /f %%a in ('powershell Invoke-RestMethod api.ipify.org') do set local_ip=%%a
+echo Public IP: %local_ip%  
+
 set "ncat-file-ext=%random%"
 
 :: Check for Args
@@ -76,10 +75,11 @@ echo [1] Listen
 echo.
 echo [2] Send
 echo.
-set /P listen-send-choice=Choose an Option from Above:
-if listen-send-choice == 2 goto send-data
-if listen-send-choice == 1 goto recive-data
-goto libs-avaiable
+choice /c 12 /m "Choose an Option from Above (1/2):"
+set _erl=%errorlevel%
+if %_erl%==2 cls & goto send-data
+if %_erl%==1 cls & goto recive-data
+
 
 :send-data
 echo Do you want to enter a IP or search for a Client in you Local Network and send it there 
@@ -88,11 +88,10 @@ echo [1] Enter IP
 echo.
 echo [2] Search for Client
 echo.
-set /P enterip-search=Choose an Option from Above:
-if enterip-search == 2 goto search-client
-if enterip-search == 1 goto enter-ip
-goto send-data
-
+choice /c 12 /m "Choose an Option from Above (1/2):"
+set _erl=%errorlevel%
+if %_erl%==2 cls & goto search-client
+if %_erl%==1 cls & goto enter-ip
 
 :enter-ip
 set /P ip-to-send=Please enter the IP:
@@ -118,7 +117,7 @@ set /a num_ips=counter-1
 echo Sending Auth-Message to IPs
 for /l %%i in (1, 1, %num_ips%) do (
     echo Sending to IP: !ip_address_%%i!...
-    echo !local_ip! | ncat !ip_address_%%i! 56954
+    echo %local_ip%% | ncat !ip_address_%%i! 56954
 )
 
 echo Messages Send...
@@ -138,27 +137,32 @@ echo [1] Text
 echo.
 echo [2] File
 echo.
-set /P file-text-send=Choose an Option from Above
-if file-text-send == 1 goto send-text
-if file-text-send == 2 goto send-file
-goto what-to-send
+choice /c 12 /m "Choose an Option from Above (1/2):"
+set _erl=%errorlevel%
+if %_erl%==2 cls & goto send-file
+if %_erl%==1 cls & goto send-text
+
 
 :send-text
 set /P text-to-send=Please enter the Text to Send Here:
 echo %text-to-send% | ncat %ip-to-send% 56954
 echo Data Was Send to %ip-to-send%
+pause
+exit
 
 :send-file
 set /P file-to-send=Please enter the Path to The File to Send Here:
 ncat %ip-to-send% 56954 < %file-to-send%
 echo File was send to %ip-to-send%
+pause
+exit
 
 :recive-data
 cd %~dp0
-echo Listening on Port 56954 (IP: !local_ip!)
+echo Listening on Port 56954 (IP: %local_ip%)
 ncat -l 56954 > auth-ncat-%ncat-file-ext%.txt
 set /p check-auth=<auth-ncat-%ncat-file-ext%.txt
-echo !local_ip! | ncat !check-auth! 56954
+echo %local_ip%% | ncat !check-auth! 56954
 ncat -l 56954 
 echo Data Recieved.
 echo If it was a File you can find it %cd%
