@@ -3,7 +3,6 @@
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /C:"IPv4"') do (
     set "local_ip=%%a"
     set "local_ip=!local_ip: =!"
-    exit /b
 )
 set "ncat-file-ext=%random%"
 
